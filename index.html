@@ -11,6 +11,7 @@
       padding: 20px;
       max-width: 600px;
       margin: auto;
+      font-size: 18px;
     }
     label {
       display: block;
@@ -19,14 +20,15 @@
     }
     input, select, textarea {
       width: 100%;
-      padding: 6px;
+      padding: 8px;
       margin-top: 5px;
       box-sizing: border-box;
+      font-size: 18px;
     }
     button {
       margin-top: 20px;
-      padding: 10px;
-      font-size: 16px;
+      padding: 12px;
+      font-size: 18px;
       width: 100%;
     }
     #qr-reader-container {
@@ -71,7 +73,7 @@
   <label>점검시간<input type="time" name="점검시간" id="timeInput" required></label>
 
   <label>점검항목
-    <select name="점검항목">
+    <select name="점검항목" id="inspectionSelect">
       <option>소화기 상태</option>
       <option>감지기 작동</option>
       <option>유도등 점등</option>
@@ -82,7 +84,9 @@
       <option>경종 작동 확인</option>
       <option>피난 유도선 상태</option>
       <option>소화전 호스 상태</option>
+      <option>직접입력</option>
     </select>
+    <input type="text" name="점검항목_직접입력" id="customInput" placeholder="직접 입력" style="display:none; margin-top: 10px;"/>
   </label>
 
   <label>이상유무
@@ -107,7 +111,7 @@
 <script>
   let qrReaderInstance = null;
 
-  // QR 인식 → 점검장소 자동 입력
+  // QR 인식 → 점검장소 자동 입력 + 점검시간 자동 입력
   document.getElementById("zoneInput").addEventListener("click", () => {
     document.getElementById("qr-reader-container").style.display = "flex";
     qrReaderInstance = new Html5Qrcode("qr-reader");
@@ -116,6 +120,12 @@
       { fps: 10, qrbox: 250 },
       (decodedText) => {
         document.getElementById("zoneInput").value = decodedText;
+
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById("timeInput").value = `${hh}:${mm}`;
+
         stopScanner();
       },
       () => {}
@@ -134,11 +144,20 @@
     }
   }
 
-  // 시간 자동 입력
+  // 직접입력 항목 제어
+  document.getElementById("inspectionSelect").addEventListener("change", function(e) {
+    const customInput = document.getElementById("customInput");
+    if (e.target.value === "직접입력") {
+      customInput.style.display = "block";
+      customInput.name = "점검항목";
+    } else {
+      customInput.style.display = "none";
+      customInput.name = "점검항목_직접입력";
+    }
+  });
+
+  // 점검일 자동 입력
   const now = new Date();
-  const hh = String(now.getHours()).padStart(2, '0');
-  const mm = String(now.getMinutes()).padStart(2, '0');
-  document.getElementById("timeInput").value = `${hh}:${mm}`;
   document.querySelector("input[name='점검일자']").value = now.toISOString().split("T")[0];
 
   // 제출
@@ -158,7 +177,6 @@
       console.log(data);
       alert("제출이 완료되었습니다.");
       document.getElementById("fireForm").reset();
-      document.getElementById("timeInput").value = `${hh}:${mm}`;
     })
     .catch(error => {
       console.error(error);
