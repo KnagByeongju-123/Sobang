@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>소방 점검 입력</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
+  <style>
+    #qr-reader-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      flex-direction: column;
+    }
+    #qr-reader {
+      width: 90%;
+      max-width: 400px;
+    }
+    #close-btn {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      background: red;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+      z-index: 10001;
+    }
+  </style>
+</head>
+<body>
+  <h2>소방 점검 입력</h2>
+  <form id="fireForm">
+    <label>🧑 점검자:<br><input type="text" name="점검자" required></label><br><br>
+
+    <label>📍 점검장소:<br>
+      <input type="text" name="점검장소" id="zoneInput" required readonly>
+    </label><br><br>
+
+    <label>⏰ 점검시간:<br><input type="time" name="점검시간" id="timeInput" required></label><br><br>
+
+    <label>📍 점검항목:<br>
+      <select name="점검항목">
+        <option>소화기 상태</option>
+        <option>감지기 작동</option>
+        <option>유도등 점덤</option>
+        <option>비상조명</option>
+        <option>비상구 개방</option>
+        <option>방화문 작동</option>
+        <option>스프린크러 누수</option>
+        <option>경종 작동 확인</option>
+        <option>피난 유도선 상태</option>
+        <option>소화전 호스 상태</option>
+      </select>
+    </label><br><br>
+
+    <label>⚠️ 이상유무:<br>
+      <select name="이상유무">
+        <option>이상 없음</option>
+        <option>이상 있음</option>
+      </select>
+    </label><br><br>
+
+    <label>🗒 비고:<br><textarea name="비고" rows="2" cols="30"></textarea></label><br><br>
+
+    <label>✔️ 확인:<br><input type="text" name="확인"></label><br><br>
+
+    <button type="submit">제출</button>
+  </form>
+
+  <!-- QR 스커널 영역 -->
+  <div id="qr-reader-container">
+    <button id="close-btn" onclick="stopScanner()">닫기</button>
+    <div id="qr-reader"></div>
+  </div>
+
+  <script>
+    let qrReaderInstance = null;
+
+    const params = new URLSearchParams(window.location.search);
+    const zoneParam = params.get("zone");
+    if (zoneParam) {
+      document.getElementById("zoneInput").value = zoneParam;
+    }
+
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById("timeInput").value = `${hh}:${mm}`;
+
+    document.getElementById("zoneInput").addEventListener("click", () => {
+      document.getElementById("qr-reader-container").style.display = "flex";
+      qrReaderInstance = new Html5Qrcode("qr-reader");
+      qrReaderInstance.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: 250
+        },
+        (decodedText, decodedResult) => {
+          document.getElementById("zoneInput").value = decodedText;
+          stopScanner();
+        },
+        (error) => {
+          // ignore decoding errors
+        }
+      );
+    });
+
+    function stopScanner() {
+      if (qrReaderInstance) {
+        qrReaderInstance.stop().then(() => {
+          document.getElementById("qr-reader-container").style.display = "none";
+          qrReaderInstance.clear();
+          qrReaderInstance = null;
+        });
+      } else {
+        document.getElementById("qr-reader-container").style.display = "none";
+      }
+    }
+
+    document.getElementById("fireForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = {};
+      formData.forEach((value, key) => data[key] = value);
+      data["점검일자"] = new Date().toISOString().split("T")[0];
+
+      fetch("https://script.google.com/macros/s/AKfycbzE-96HfNwHsZ9I34BdaisgR2bE5yP-yYXatxOUOgQlZarN7qoV87o7BYGk2y5rEHvw0Q/exec", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json"
+        }
+      })
+      .then(res => res.text())
+      .then(response => {
+        alert("점검 내용이 제출되었습니다!");
+        document.getElementById("fireForm").reset();
+        document.getElementById("timeInput").value = `${hh}:${mm}`;
+      })
+      .catch(err => alert("제출 실패: " + err));
+    });
+  </script>
+</body>
+</html>
