@@ -7,61 +7,63 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       font-size: 18px;
       padding: 20px;
       max-width: 600px;
       margin: auto;
+      background-color: #f9f9f9;
     }
     label {
       display: block;
-      margin-top: 12px;
+      margin-top: 14px;
       font-weight: bold;
     }
-    input, select, textarea {
+    input, select, textarea, button {
       width: 100%;
-      font-size: 18px;
-      padding: 8px;
-      margin-top: 5px;
+      padding: 10px;
+      margin-top: 6px;
       box-sizing: border-box;
+      font-size: 16px;
     }
     button {
-      margin-top: 20px;
-      padding: 12px;
-      font-size: 18px;
-      width: 100%;
+      background-color: #1976d2;
+      color: white;
+      border: none;
+      cursor: pointer;
     }
     #preview-wrapper {
-      display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      z-index: 9999;
-      justify-content: center;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.9);
+      display: none;
       align-items: center;
-      flex-direction: column;
+      justify-content: center;
+      z-index: 9999;
+    }
+    #preview-container {
+      position: relative;
+      width: 90vw;
+      max-width: 480px;
+      aspect-ratio: 1/1;
     }
     #preview {
-      width: 320px;
-      height: 320px;
-      background: #000;
+      width: 100%;
+      height: 100%;
+      background-color: black;
       border: 2px solid #fff;
     }
     #closePreview {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      background: red;
+      top: -45px;
+      left: 0;
+      padding: 8px 12px;
+      background-color: red;
       color: white;
       border: none;
-      padding: 8px 12px;
-      font-size: 16px;
+      font-size: 14px;
       cursor: pointer;
-      border-radius: 4px;
-      z-index: 10001;
+      z-index: 10000;
     }
   </style>
 </head>
@@ -70,73 +72,74 @@
 <h2>소방 점검 입력</h2>
 
 <form id="fireForm">
-  <label>점검일자<input type="date" name="점검일자" required></label>
-  <label>점검자<input type="text" name="점검자" required></label>
-  <label>점검장소(QR리딩)
-    <input type="text" name="점검장소" id="zoneInput" readonly required>
+  <label>점검일자
+    <input type="date" name="점검일자" required>
   </label>
-  <label>점검시간<input type="time" name="점검시간" id="timeInput" required></label>
+
+  <label>점검자
+    <input type="text" name="점검자" required>
+  </label>
+
+  <label>점검장소
+    <input type="text" name="점검장소" id="zoneInput" readonly required>
+    <button type="button" onclick="scanQRCode()">QR코드 리딩</button>
+  </label>
+
+  <label>점검시간
+    <input type="time" name="점검시간" id="timeInput" required>
+  </label>
+
   <label>점검항목
-    <select name="점검항목" id="inspectionSelect">
+    <select name="점검항목">
       <option>소화기 상태</option>
       <option>감지기 작동</option>
       <option>유도등 점등</option>
-      <option>비상조명</option>
       <option>비상구 개방</option>
       <option>방화문 작동</option>
-      <option>스프링클러 누수</option>
-      <option>경종 작동 확인</option>
-      <option>피난 유도선 상태</option>
-      <option>소화전 호스 상태</option>
-      <option>직접입력</option>
     </select>
-    <input type="text" name="점검항목_직접입력" id="customInput" placeholder="직접 입력" style="display:none; margin-top: 10px;" />
   </label>
+
   <label>이상유무
     <select name="이상유무">
       <option>이상 없음</option>
       <option>이상 있음</option>
     </select>
   </label>
-  <label>비고<textarea name="비고"></textarea></label>
-  <label>확인<input type="text" name="확인"></label>
+
+  <label>비고
+    <textarea name="비고" rows="2"></textarea>
+  </label>
+
+  <label>확인
+    <input type="text" name="확인">
+  </label>
+
   <button type="submit">제출</button>
 </form>
 
-<!-- QR 스캐너 영역 -->
+<!-- 카메라 미리보기 -->
 <div id="preview-wrapper">
-  <button id="closePreview">닫기</button>
-  <div id="preview"></div>
+  <div id="preview-container">
+    <button id="closePreview">닫기</button>
+    <div id="preview"></div>
+  </div>
 </div>
 
 <script>
   let html5QrCodeInstance = null;
 
-  async function scanQRCodeForInput(inputId) {
-    const previewWrapper = document.getElementById("preview-wrapper");
+  function scanQRCode() {
+    const wrapper = document.getElementById("preview-wrapper");
     const preview = document.getElementById("preview");
-
-    try {
-      await navigator.mediaDevices.getUserMedia({ video: true });
-    } catch (err) {
-      alert("카메라 권한이 필요합니다. 브라우저 설정을 확인해주세요.");
-      return;
-    }
-
-    previewWrapper.style.display = "flex";
-
-    if (html5QrCodeInstance) {
-      await html5QrCodeInstance.stop().catch(() => {});
-      await html5QrCodeInstance.clear().catch(() => {});
-    }
+    wrapper.style.display = "flex";
 
     html5QrCodeInstance = new Html5Qrcode("preview");
 
     html5QrCodeInstance.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 300, height: 300 } },
+      { fps: 10, qrbox: { width: 250, height: 250 } },
       (decodedText) => {
-        document.getElementById(inputId).value = decodedText;
+        document.getElementById("zoneInput").value = decodedText;
 
         const now = new Date();
         const hh = String(now.getHours()).padStart(2, '0');
@@ -148,61 +151,46 @@
       (err) => {
         console.warn("QR 인식 실패:", err);
       }
-    ).catch(err => {
-      console.error("카메라 시작 실패:", err);
-      alert("카메라를 시작할 수 없습니다. 브라우저 권한 또는 다른 앱 충돌이 있을 수 있습니다.");
-      previewWrapper.style.display = "none";
+    ).catch((err) => {
+      alert("카메라 사용에 실패했습니다. 권한을 허용했는지 확인해주세요.");
+      wrapper.style.display = "none";
     });
   }
 
   function stopQrScanner() {
+    const wrapper = document.getElementById("preview-wrapper");
+    wrapper.style.display = "none";
     if (html5QrCodeInstance) {
       html5QrCodeInstance.stop().then(() => {
         html5QrCodeInstance.clear();
-        html5QrCodeInstance = null;
-        document.getElementById("preview-wrapper").style.display = "none";
-      });
-    } else {
-      document.getElementById("preview-wrapper").style.display = "none";
+      }).catch(console.error);
     }
   }
 
   document.getElementById("closePreview").addEventListener("click", stopQrScanner);
-  document.getElementById("zoneInput").addEventListener("click", () => {
-    scanQRCodeForInput("zoneInput");
-  });
 
-  document.getElementById("inspectionSelect").addEventListener("change", function(e) {
-    const customInput = document.getElementById("customInput");
-    if (e.target.value === "직접입력") {
-      customInput.style.display = "block";
-      customInput.name = "점검항목";
-    } else {
-      customInput.style.display = "none";
-      customInput.name = "점검항목_직접입력";
-    }
-  });
+  // 점검일자 자동 입력
+  document.querySelector("input[name='점검일자']").value = new Date().toISOString().split("T")[0];
 
-  const now = new Date();
-  document.querySelector("input[name='점검일자']").value = now.toISOString().split("T")[0];
-
-  document.getElementById("fireForm").addEventListener("submit", function(e) {
+  // 제출 처리
+  document.getElementById("fireForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    const formData = new FormData(this);
-    const formBody = new URLSearchParams(formData);
-    const url = "https://script.google.com/macros/s/AKfycbxdBr1DY9fyxCFP0IMJq1VCWUI8InSSpr5mr46SE_4__jHtLU9riK3Z6L-9otWqfTfWmQ/exec"; // ← 본인의 URL로 교체
+    const form = e.target;
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
 
-    fetch(url, {
+    fetch("https://script.google.com/macros/s/YOUR_WEBAPP_ID/exec", { // ← 본인의 URL로 교체
       method: "POST",
-      body: formBody
-    })
-    .then(res => res.text())
-    .then(data => {
-      alert("제출이 완료되었습니다.");
-      this.reset();
-    })
-    .catch(err => {
-      alert("제출 실패: " + err.message);
+      body: params
+    }).then(res => {
+      if (res.ok) {
+        alert("제출 완료!");
+        form.reset();
+      } else {
+        alert("제출 실패: " + res.statusText);
+      }
+    }).catch(err => {
+      alert("오류 발생: " + err);
     });
   });
 </script>
