@@ -86,13 +86,21 @@
   </label>
 
   <label>점검항목
-    <select name="점검항목">
+    <select name="점검항목" id="inspectionSelect">
       <option>소화기 상태</option>
       <option>감지기 작동</option>
       <option>유도등 점등</option>
+      <option>비상조명 점등</option>
       <option>비상구 개방</option>
       <option>방화문 작동</option>
+      <option>스프링클러 누수</option>
+      <option>경종 작동 확인</option>
+      <option>피난 유도선 상태</option>
+      <option>소화전 호스 상태</option>
+      <option>직접입력</option>
     </select>
+    <input type="text" id="customInspection" name="점검항목_직접입력"
+           placeholder="직접 입력 내용을 작성하세요" style="display:none; margin-top:6px;">
   </label>
 
   <label>이상유무
@@ -142,7 +150,7 @@
     // 새 스캐너 인스턴스 생성 및 시작
     html5QrCodeInstance = new Html5Qrcode("preview");
     html5QrCodeInstance.start(
-      { facingMode: "environment" },   // ← 여기만으로도 모바일에서 뒷카메라 사용
+      { facingMode: "environment" },
       { fps: 10, qrbox: { width: 280, height: 280 } },
       decodedText => {
         document.getElementById(targetId).value = decodedText;
@@ -172,6 +180,13 @@
 
   document.getElementById("closePreview")
     .addEventListener("click", stopQrScanner);
+
+  // 직접입력 토글
+  document.getElementById("inspectionSelect")
+    .addEventListener("change", e => {
+      const custom = document.getElementById("customInspection");
+      custom.style.display = (e.target.value === "직접입력") ? "block" : "none";
+    });
 
   // 점검일자 자동 설정
   document.querySelector("input[name='점검일자']").value
