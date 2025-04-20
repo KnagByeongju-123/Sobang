@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>소방 점검 입력</title>
-  <script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
+  <!-- 샘플에서 쓰인 버전 그대로 -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.7/html5-qrcode.min.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -32,7 +33,6 @@
       border: none;
       cursor: pointer;
     }
-    /* QR 스캐너 미리보기 전체 래퍼 */
     #preview-wrapper {
       position: fixed;
       inset: 0;
@@ -42,15 +42,13 @@
       justify-content: center;
       z-index: 9999;
     }
-    /* 내부 컨테이너 */
     #preview-wrapper > div {
       position: relative;
     }
     #preview {
       width: 300px;
       height: 300px;
-      background: #000;
-      border: 2px solid #fff;
+      background: #fff;
     }
     #closePreview {
       position: absolute;
@@ -80,7 +78,7 @@
   </label>
 
   <label>점검장소
-    <input type="text" name="점검장소" id="zoneInput" readonly required placeholder="여기를 터치하세요">
+    <input type="text" name="점검장소" id="zoneInput" readonly required placeholder="터치하여 QR 스캔">
   </label>
 
   <label>점검시간
@@ -126,47 +124,25 @@
 <script>
   let html5QrCodeInstance = null;
 
-  // 점검장소(input) 터치 시 카메라 스캔
+  // 점검장소 필드 터치 시 스캔 시작
   document.getElementById("zoneInput").addEventListener("click", () => {
     scanQRCode("zoneInput");
   });
 
-  async function scanQRCode(targetId) {
+  function scanQRCode(targetId) {
     const wrapper = document.getElementById("preview-wrapper");
     wrapper.style.display = "flex";
 
-    // 1) 권한 요청 (getUserMedia로 미리 띄워 허용받기)
-    try {
-      await navigator.mediaDevices.getUserMedia({ video: true });
-    } catch (err) {
-      alert("카메라 권한이 필요합니다. 설정에서 허용해주세요.");
-      wrapper.style.display = "none";
-      return;
-    }
-
-    // 2) 연결 가능한 카메라 목록 조회
-    let devices;
-    try {
-      devices = await Html5Qrcode.getCameras();
-      if (!devices || devices.length === 0) {
-        throw new Error("카메라 없음");
-      }
-    } catch (e) {
-      alert("카메라를 찾을 수 없습니다.");
-      wrapper.style.display = "none";
-      return;
-    }
-
-    // 3) 기존 인스턴스 정리
+    // 기존 인스턴스 정리
     if (html5QrCodeInstance) {
-      await html5QrCodeInstance.stop().catch(()=>{});
-      await html5QrCodeInstance.clear().catch(()=>{});
+      html5QrCodeInstance.stop().catch(()=>{});
+      html5QrCodeInstance.clear().catch(()=>{});
     }
 
-    // 4) 새 인스턴스 생성 및 시작
+    // 새 스캐너 인스턴스 생성 및 시작
     html5QrCodeInstance = new Html5Qrcode("preview");
     html5QrCodeInstance.start(
-      devices[0].id,              // 첫 번째 장치 사용
+      { facingMode: "environment" },   // ← 여기만으로도 모바일에서 뒷카메라 사용
       { fps: 10, qrbox: { width: 280, height: 280 } },
       decodedText => {
         document.getElementById(targetId).value = decodedText;
@@ -179,7 +155,7 @@
       },
       err => console.warn("QR 인식 실패:", err)
     ).catch(err => {
-      alert("QR 스캔 시작 실패: " + err);
+      alert("카메라 권한 요청 또는 초기화에 실패했습니다.\n설정에서 권한을 허용해주세요.");
       wrapper.style.display = "none";
     });
   }
@@ -198,10 +174,10 @@
     .addEventListener("click", stopQrScanner);
 
   // 점검일자 자동 설정
-  document.querySelector("input[name='점검일자']").value =
-    new Date().toISOString().split("T")[0];
+  document.querySelector("input[name='점검일자']").value
+    = new Date().toISOString().split("T")[0];
 
-  // 제출 처리
+  // 폼 제출 처리
   document.getElementById("fireForm")
     .addEventListener("submit", function(e) {
       e.preventDefault();
