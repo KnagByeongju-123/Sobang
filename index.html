@@ -1,11 +1,34 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>소방 점검 입력</title>
   <script src="https://unpkg.com/html5-qrcode@2.3.10/minified/html5-qrcode.min.js"></script>
   <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 6px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 16px;
+      width: 100%;
+    }
     #qr-reader-container {
       position: fixed;
       top: 0;
@@ -39,118 +62,109 @@
   </style>
 </head>
 <body>
-  <h2>소방 점검 입력</h2>
-  <form id="fireForm">
-    <label>🧑 점검자:<br><input type="text" name="점검자" required></label><br><br>
 
-    <label>📍 점검장소:<br>
-      <input type="text" name="점검장소" id="zoneInput" required readonly>
-    </label><br><br>
+<h2>소방 점검 입력</h2>
+<form id="fireForm">
+  <label>점검일자<input type="date" name="점검일자" required></label>
+  <label>점검자<input type="text" name="점검자" required></label>
+  <label>점검장소<input type="text" name="점검장소" id="zoneInput" required readonly></label>
+  <label>점검시간<input type="time" name="점검시간" id="timeInput" required></label>
 
-    <label>⏰ 점검시간:<br><input type="time" name="점검시간" id="timeInput" required></label><br><br>
+  <label>점검항목
+    <select name="점검항목">
+      <option>소화기 상태</option>
+      <option>감지기 작동</option>
+      <option>유도등 점등</option>
+      <option>비상조명</option>
+      <option>비상구 개방</option>
+      <option>방화문 작동</option>
+      <option>스프링클러 누수</option>
+      <option>경종 작동 확인</option>
+      <option>피난 유도선 상태</option>
+      <option>소화전 호스 상태</option>
+    </select>
+  </label>
 
-    <label>📍 점검항목:<br>
-      <select name="점검항목">
-        <option>소화기 상태</option>
-        <option>감지기 작동</option>
-        <option>유도등 점덤</option>
-        <option>비상조명</option>
-        <option>비상구 개방</option>
-        <option>방화문 작동</option>
-        <option>스프린크러 누수</option>
-        <option>경종 작동 확인</option>
-        <option>피난 유도선 상태</option>
-        <option>소화전 호스 상태</option>
-      </select>
-    </label><br><br>
+  <label>이상유무
+    <select name="이상유무">
+      <option>이상 없음</option>
+      <option>이상 있음</option>
+    </select>
+  </label>
 
-    <label>⚠️ 이상유무:<br>
-      <select name="이상유무">
-        <option>이상 없음</option>
-        <option>이상 있음</option>
-      </select>
-    </label><br><br>
+  <label>비고<textarea name="비고"></textarea></label>
+  <label>확인<input type="text" name="확인"></label>
 
-    <label>🗒 비고:<br><textarea name="비고" rows="2" cols="30"></textarea></label><br><br>
+  <button type="submit">제출</button>
+</form>
 
-    <label>✔️ 확인:<br><input type="text" name="확인"></label><br><br>
+<!-- QR 스캐너 영역 -->
+<div id="qr-reader-container">
+  <button id="close-btn" onclick="stopScanner()">닫기</button>
+  <div id="qr-reader"></div>
+</div>
 
-    <button type="submit">제출</button>
-  </form>
+<script>
+  let qrReaderInstance = null;
 
-  <!-- QR 스커널 영역 -->
-  <div id="qr-reader-container">
-    <button id="close-btn" onclick="stopScanner()">닫기</button>
-    <div id="qr-reader"></div>
-  </div>
+  // QR 인식 → 점검장소 자동 입력
+  document.getElementById("zoneInput").addEventListener("click", () => {
+    document.getElementById("qr-reader-container").style.display = "flex";
+    qrReaderInstance = new Html5Qrcode("qr-reader");
+    qrReaderInstance.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      (decodedText) => {
+        document.getElementById("zoneInput").value = decodedText;
+        stopScanner();
+      },
+      () => {}
+    );
+  });
 
-  <script>
-    let qrReaderInstance = null;
-
-    const params = new URLSearchParams(window.location.search);
-    const zoneParam = params.get("zone");
-    if (zoneParam) {
-      document.getElementById("zoneInput").value = zoneParam;
-    }
-
-    const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    document.getElementById("timeInput").value = `${hh}:${mm}`;
-
-    document.getElementById("zoneInput").addEventListener("click", () => {
-      document.getElementById("qr-reader-container").style.display = "flex";
-      qrReaderInstance = new Html5Qrcode("qr-reader");
-      qrReaderInstance.start(
-        { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: 250
-        },
-        (decodedText, decodedResult) => {
-          document.getElementById("zoneInput").value = decodedText;
-          stopScanner();
-        },
-        (error) => {
-          // ignore decoding errors
-        }
-      );
-    });
-
-    function stopScanner() {
-      if (qrReaderInstance) {
-        qrReaderInstance.stop().then(() => {
-          document.getElementById("qr-reader-container").style.display = "none";
-          qrReaderInstance.clear();
-          qrReaderInstance = null;
-        });
-      } else {
+  function stopScanner() {
+    if (qrReaderInstance) {
+      qrReaderInstance.stop().then(() => {
         document.getElementById("qr-reader-container").style.display = "none";
-      }
+        qrReaderInstance.clear();
+        qrReaderInstance = null;
+      });
+    } else {
+      document.getElementById("qr-reader-container").style.display = "none";
     }
+  }
 
-    document.getElementById("fireForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const formData = new FormData(e.target);
-      const data = {};
-      formData.forEach((value, key) => data[key] = value);
-      data["점검일자"] = new Date().toISOString().split("T")[0];
+  // 시간 자동 입력
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById("timeInput").value = `${hh}:${mm}`;
+  document.querySelector("input[name='점검일자']").value = now.toISOString().split("T")[0];
 
-      fetch("https://script.google.com/macros/s/AKfycbzE-96HfNwHsZ9I34BdaisgR2bE5yP-yYXatxOUOgQlZarN7qoV87o7BYGk2y5rEHvw0Q/exec", {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: {
-          "Content-Type": "application/json"
-        }
-      })
-      .then(res => res.text())
-      .then(response => {
-        alert("점검 내용이 제출되었습니다!");
-        document.getElementById("fireForm").reset();
-        document.getElementById("timeInput").value = `${hh}:${mm}`;
-      })
-      .catch(err => alert("제출 실패: " + err));
+  // 제출
+  document.getElementById("fireForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const formBody = new URLSearchParams(formData);
+    const url = "https://script.google.com/macros/s/AKfycbxdBr1DY9fyxCFP0IMJq1VCWUI8InSSpr5mr46SE_4__jHtLU9riK3Z6L-9otWqfTfWmQ/exec";
+
+    fetch(url, {
+      method: "POST",
+      body: formBody
+    })
+    .then(response => response.text())
+    .then(data => {
+      console.log(data);
+      alert("제출이 완료되었습니다.");
+      document.getElementById("fireForm").reset();
+      document.getElementById("timeInput").value = `${hh}:${mm}`;
+    })
+    .catch(error => {
+      console.error(error);
+      alert("제출에 실패했습니다. 다시 시도해주세요.");
     });
-  </script>
+  });
+</script>
 </body>
 </html>
