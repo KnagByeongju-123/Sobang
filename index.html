@@ -88,14 +88,14 @@
   <label>점검항목
     <select name="점검항목" id="inspectionSelect">
       <option>소화기 상태</option>
-      <option>냉난방기, 배선 상태</option>
+      <option>감지기 작동</option>
+      <option>냉난방기 및 배선상태</option>
       <option>유도등 점등</option>
-      <option>비상조명 점등</option>
       <option>비상구 개방</option>
       <option>방화문 작동</option>
       <option>스프링클러 누수</option>
-      <option>경종작동 확인</option>
-      <option>피난유도선 상태</option>
+      <option>경종 작동 확인</option>
+      <option>피난 유도선 상태</option>
       <option>소화전 호스 상태</option>
       <option>직접입력</option>
     </select>
@@ -132,29 +132,29 @@
 <script>
   let html5QrCodeInstance = null;
 
-  // 점검장소 필드 터치 시 스캔 시작
-  document.getElementById("zoneInput").addEventListener("click", () => {
-    scanQRCode("zoneInput");
-  });
+  document.getElementById("zoneInput")
+    .addEventListener("click", () => scanQRCode("zoneInput"));
 
   function scanQRCode(targetId) {
     const wrapper = document.getElementById("preview-wrapper");
+    const preview = document.getElementById("preview");
+    // Clear previous content
+    preview.innerHTML = "";
     wrapper.style.display = "flex";
 
-    // 기존 인스턴스 정리
     if (html5QrCodeInstance) {
       html5QrCodeInstance.stop().catch(()=>{});
       html5QrCodeInstance.clear().catch(()=>{});
+      html5QrCodeInstance = null;
     }
 
-    // 새 스캐너 인스턴스 생성 및 시작
     html5QrCodeInstance = new Html5Qrcode("preview");
     html5QrCodeInstance.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: { width: 280, height: 280 } },
       decodedText => {
         document.getElementById(targetId).value = decodedText;
-        // 시간 자동 입력
+        // 자동 시간 입력
         const now = new Date();
         document.getElementById("timeInput").value =
           String(now.getHours()).padStart(2,'0') + ":" +
@@ -163,7 +163,8 @@
       },
       err => console.warn("QR 인식 실패:", err)
     ).catch(err => {
-      alert("카메라 권한 요청 또는 초기화에 실패했습니다.\n설정에서 권한을 허용해주세요.");
+      alert("카메라 초기화 실패: 권한 확인 또는 다른 앱 사용 중인지 확인하세요.");
+      console.error(err);
       wrapper.style.display = "none";
     });
   }
@@ -174,6 +175,7 @@
     if (html5QrCodeInstance) {
       html5QrCodeInstance.stop()
         .then(()=> html5QrCodeInstance.clear())
+        .then(()=> { html5QrCodeInstance = null; })
         .catch(console.error);
     }
   }
@@ -188,28 +190,25 @@
       custom.style.display = (e.target.value === "직접입력") ? "block" : "none";
     });
 
-  // 점검일자 자동 설정
-  document.querySelector("input[name='점검일자']").value
-    = new Date().toISOString().split("T")[0];
+  // 자동 날짜 입력
+  document.querySelector("input[name='점검일자']").value =
+    new Date().toISOString().split("T")[0];
 
-  // 폼 제출 처리
   document.getElementById("fireForm")
     .addEventListener("submit", function(e) {
       e.preventDefault();
       const params = new URLSearchParams(new FormData(this));
-      fetch("https://script.google.com/macros/s/AKfycbws1jdgUxpmiz3z_QeVqvasygO9Hvur5nX7PFYKH8e2U1hjL7we7eH0476Ytao0oHSD4A/exec", {
+      fetch("https://script.google.com/macros/s/YOUR_WEBAPP_ID/exec", {
         method: "POST",
         body: params
-      })
-      .then(res => {
+      }).then(res => {
         if (res.ok) {
           alert("제출 완료!");
           this.reset();
         } else {
           alert("제출 실패: " + res.statusText);
         }
-      })
-      .catch(err => alert("오류 발생: " + err));
+      }).catch(err => alert("오류 발생: " + err));
     });
 </script>
 
