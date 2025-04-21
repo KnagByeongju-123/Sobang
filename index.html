@@ -42,14 +42,8 @@
       justify-content: center;
       z-index: 9999;
     }
-    #preview-wrapper > div {
-      position: relative;
-    }
-    #preview {
-      width: 300px;
-      height: 300px;
-      background: #fff;
-    }
+    #preview-wrapper > div { position: relative; }
+    #preview { width: 300px; height: 300px; background: #fff; }
     #closePreview {
       position: absolute;
       top: -45px;
@@ -74,7 +68,17 @@
   </label>
 
   <label>점검자
-    <input type="text" name="점검자" required>
+    <select name="점검자" id="inspectorSelect" required>
+      <option value="" disabled selected>선택하세요</option>
+      <option value="강병주">강병주</option>
+      <option value="강창구">강창구</option>
+      <option value="김오연">김오연</option>
+      <option value="박기근">박기근</option>
+      <option value="이재규">이재규</option>
+      <option value="직접등록">직접등록</option>
+    </select>
+    <input type="text" id="customInspector" name="점검자_직접입력"
+           placeholder="점검자 이름을 입력하세요" style="display:none; margin-top:6px;">
   </label>
 
   <label>점검장소
@@ -132,13 +136,11 @@
 <script>
   let html5QrCodeInstance = null;
 
-  document.getElementById("zoneInput")
-    .addEventListener("click", () => scanQRCode("zoneInput"));
+  document.getElementById("zoneInput").addEventListener("click", () => scanQRCode("zoneInput"));
 
   function scanQRCode(targetId) {
     const wrapper = document.getElementById("preview-wrapper");
     const preview = document.getElementById("preview");
-    // Clear previous content
     preview.innerHTML = "";
     wrapper.style.display = "flex";
 
@@ -154,7 +156,6 @@
       { fps: 10, qrbox: { width: 280, height: 280 } },
       decodedText => {
         document.getElementById(targetId).value = decodedText;
-        // 자동 시간 입력
         const now = new Date();
         document.getElementById("timeInput").value =
           String(now.getHours()).padStart(2,'0') + ":" +
@@ -180,36 +181,36 @@
     }
   }
 
-  document.getElementById("closePreview")
-    .addEventListener("click", stopQrScanner);
+  document.getElementById("closePreview").addEventListener("click", stopQrScanner);
 
-  // 직접입력 토글
-  document.getElementById("inspectionSelect")
-    .addEventListener("change", e => {
-      const custom = document.getElementById("customInspection");
-      custom.style.display = (e.target.value === "직접입력") ? "block" : "none";
-    });
+  document.getElementById("inspectorSelect").addEventListener("change", e => {
+    const custom = document.getElementById("customInspector");
+    custom.style.display = (e.target.value === "직접등록") ? "block" : "none";
+  });
 
-  // 자동 날짜 입력
+  document.getElementById("inspectionSelect").addEventListener("change", e => {
+    const custom = document.getElementById("customInspection");
+    custom.style.display = (e.target.value === "직접입력") ? "block" : "none";
+  });
+
   document.querySelector("input[name='점검일자']").value =
     new Date().toISOString().split("T")[0];
 
-  document.getElementById("fireForm")
-    .addEventListener("submit", function(e) {
-      e.preventDefault();
-      const params = new URLSearchParams(new FormData(this));
-      fetch("https://script.google.com/macros/s/AKfycbzdhcA8LRjXSiRdA8eJCa1n1ItiqS-KBwZEE0vp7VqUuz1VQft0Nly2p9z5_AQpSzsx4g/exec", {
-        method: "POST",
-        body: params
-      }).then(res => {
-        if (res.ok) {
-          alert("제출 완료!");
-          this.reset();
-        } else {
-          alert("제출 실패: " + res.statusText);
-        }
-      }).catch(err => alert("오류 발생: " + err));
-    });
+  document.getElementById("fireForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const params = new URLSearchParams(new FormData(this));
+    fetch("https://script.google.com/macros/s/AKfycbzdhcA8LRjXSiRdA8eJCa1n1ItiqS-KBwZEE0vp7VqUuz1VQft0Nly2p9z5_AQpSzsx4g/exec", {
+      method: "POST",
+      body: params
+    }).then(res => {
+      if (res.ok) {
+        alert("제출 완료!");
+        this.reset();
+      } else {
+        alert("제출 실패: " + res.statusText);
+      }
+    }).catch(err => alert("오류 발생: " + err));
+  });
 </script>
 
 </body>
