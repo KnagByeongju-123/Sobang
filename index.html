@@ -198,21 +198,45 @@
   document.querySelector("input[name='점검일자']").value =
     new Date().toISOString().split("T")[0];
 
+  // === 수정된 submit 핸들러 시작 ===
   document.getElementById("fireForm").addEventListener("submit", function(e) {
     e.preventDefault();
-    const params = new URLSearchParams(new FormData(this));
+    const form = this;
+
+    // 1) 제출 전 현재 점검일자·점검자 값 저장
+    const dateInput = form.querySelector("input[name='점검일자']");
+    const inspectorSelect = form.querySelector("select[name='점검자']");
+    const savedDate = dateInput.value;
+    const savedInspector = inspectorSelect.value;
+
+    // 2) 서버로 전송
+    const params = new URLSearchParams(new FormData(form));
     fetch("https://script.google.com/macros/s/AKfycbzdhcA8LRjXSiRdA8eJCa1n1ItiqS-KBwZEE0vp7VqUuz1VQft0Nly2p9z5_AQpSzsx4g/exec", {
       method: "POST",
       body: params
-    }).then(res => {
+    })
+    .then(res => {
       if (res.ok) {
         alert("제출 완료!");
-        this.reset();
+
+        // 3) 폼 리셋
+        form.reset();
+
+        // 4) 점검일자·점검자 복원
+        dateInput.value = savedDate;
+        inspectorSelect.value = savedInspector;
+
+        // 5) '직접등록' 선택 시 커스텀 입력 노출 처리
+        const customInspector = document.getElementById("customInspector");
+        customInspector.style.display = (savedInspector === "직접등록") ? "block" : "none";
       } else {
         alert("제출 실패: " + res.statusText);
       }
-    }).catch(err => alert("오류 발생: " + err));
+    })
+    .catch(err => alert("오류 발생: " + err));
   });
+  // === 수정된 submit 핸들러 끝 ===
+
 </script>
 
 </body>
