@@ -158,12 +158,13 @@
       { fps: 10, qrbox: { width: 280, height: 280 } },
       decodedText => {
         document.getElementById(targetId).value = decodedText;
-        const now = new Date();
-        document.getElementById("timeInput").value =
-          String(now.getHours()).padStart(2,'0') + ":" +
-          String(now.getMinutes()).padStart(2,'0');
-        stopQrScanner();
-      },
+  const now = new Date();
+  const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
+  document.getElementById("timeInput").value =
+    String(kst.getHours()).padStart(2,'0') + ":" +
+    String(kst.getMinutes()).padStart(2,'0');
+  stopQrScanner();
+},
       err => console.warn("QR 인식 실패:", err)
     ).catch(err => {
       alert("카메라 초기화 실패: 권한 확인 또는 다른 앱 사용 중인지 확인하세요.");
