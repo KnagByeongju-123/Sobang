@@ -157,12 +157,15 @@
       { facingMode: "environment" },
       { fps: 10, qrbox: { width: 280, height: 280 } },
       decodedText => {
-        document.getElementById(targetId).value = decodedText;
-  const now = new Date();
-  const kst = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-  document.getElementById("timeInput").value =
-    String(kst.getHours()).padStart(2,'0') + ":" +
-    String(kst.getMinutes()).padStart(2,'0');
+  document.getElementById(targetId).value = decodedText;
+  // 한국 표준시(KST)로 시간 가져오기
+  const timeString = new Date().toLocaleTimeString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    hour12: false,
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  document.getElementById("timeInput").value = timeString;
   stopQrScanner();
 },
       err => console.warn("QR 인식 실패:", err)
