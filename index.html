@@ -199,8 +199,9 @@
     custom.style.display = (e.target.value === "직접입력") ? "block" : "none";
   });
 
-  document.querySelector("input[name='점검일자']").value =
-    new Date().toISOString().split("T")[0];
+  // 한국 표준시(KST) 기준으로 YYYY-MM-DD 형식의 오늘 날짜 설정
+document.querySelector("input[name='점검일자']").value =
+  new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
 
   // === 수정된 submit 핸들러 시작 ===
   document.getElementById("fireForm").addEventListener("submit", function(e) {
