@@ -267,6 +267,31 @@
     "유도등 점검": { status: "", note: "" }
   };
 
+  // 기본 점검 상태 설정 함수
+  function setDefaultInspectionStatus() {
+    // 모든 항목을 "이상없음"으로 기본 설정
+    Object.keys(inspectionData).forEach(item => {
+      inspectionData[item].status = "이상없음";
+      inspectionData[item].note = "";
+    });
+    
+    // UI에서 모든 "이상없음" 버튼 선택
+    document.querySelectorAll('.status-btn.normal').forEach(btn => {
+      btn.classList.add('selected');
+    });
+    
+    // 모든 "이상발생" 버튼 선택 해제
+    document.querySelectorAll('.status-btn.abnormal').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+    
+    // 모든 입력창 숨기기
+    document.querySelectorAll('.issue-input').forEach(input => {
+      input.style.display = 'none';
+      input.value = '';
+    });
+  }
+
   document.getElementById("zoneInput").addEventListener("click", () => scanQRCode("zoneInput"));
 
   function scanQRCode(targetId) {
@@ -297,8 +322,9 @@
         document.getElementById("timeInput").value = timeString;
         stopQrScanner();
         
-        // QR코드 스캔 후 점검시간 등록과 동시에 점검항목 팝업 표시
+        // QR코드 스캔 후 점검시간 등록과 동시에 점검항목 팝업 표시 및 기본값 설정
         setTimeout(() => {
+          setDefaultInspectionStatus();
           document.getElementById("inspection-popup").style.display = "flex";
         }, 500);
       },
@@ -371,29 +397,19 @@
     });
   });
 
-  // 점검 완료 버튼
+  // 점검 완료 버튼 - 바로 제출 진행
   document.getElementById("complete-inspection").addEventListener("click", function() {
-    // 모든 항목이 선택되었는지 확인
-    let allSelected = true;
+    // 점검 결과 데이터 준비
     let inspectionResults = [];
     let statusResults = [];
     let noteResults = [];
     
     for (const [item, data] of Object.entries(inspectionData)) {
-      if (!data.status) {
-        allSelected = false;
-        alert(`${item} 항목의 상태를 선택해주세요.`);
-        return;
-      }
       inspectionResults.push(`${item}(${data.status})`);
       statusResults.push(data.status);
       if (data.note && data.status === '이상발생') {
         noteResults.push(`${item}: ${data.note}`);
       }
-    }
-    
-    if (!allSelected) {
-      return;
     }
     
     // 숨겨진 필드에 결과 저장
@@ -404,7 +420,8 @@
     // 팝업 닫기
     document.getElementById("inspection-popup").style.display = "none";
     
-    alert("점검이 완료되었습니다!");
+    // 바로 제출 진행
+    submitForm();
   });
 
   // 점검 취소 버튼
@@ -435,18 +452,10 @@
   document.querySelector("input[name='점검일자']").value =
     new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
 
-  // 수정된 submit 핸들러
-  document.getElementById("fireForm").addEventListener("submit", function(e) {
-    e.preventDefault();
-    const form = this;
-
-    // 점검 결과가 있는지 확인
-    const inspectionResultsValue = document.getElementById("inspectionResults").value;
-    if (!inspectionResultsValue) {
-      alert("QR코드를 스캔하고 점검 항목을 완료해주세요.");
-      return;
-    }
-
+  // 제출 함수
+  function submitForm() {
+    const form = document.getElementById("fireForm");
+    
     // 제출 전 현재 점검일자·점검자 값 저장
     const dateInput = form.querySelector("input[name='점검일자']");
     const inspectorSelect = form.querySelector("select[name='점검자']");
@@ -504,6 +513,20 @@
       }
     })
     .catch(err => alert("오류 발생: " + err));
+  }
+
+  // 수정된 submit 핸들러 - 직접 제출 버튼 클릭시
+  document.getElementById("fireForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    // 점검 결과가 있는지 확인
+    const inspectionResultsValue = document.getElementById("inspectionResults").value;
+    if (!inspectionResultsValue) {
+      alert("QR코드를 스캔하고 점검 항목을 완료해주세요.");
+      return;
+    }
+    
+    submitForm();
   });
 
 </script>
