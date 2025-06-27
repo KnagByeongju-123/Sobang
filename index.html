@@ -56,6 +56,105 @@
       cursor: pointer;
       z-index: 10000;
     }
+    
+    /* 점검 항목 팝업 스타일 */
+    #inspection-popup {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    
+    #inspection-popup .popup-content {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .inspection-item {
+      margin: 15px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f8f9fa;
+    }
+    
+    .inspection-item h4 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+    
+    .status-buttons {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    
+    .status-btn {
+      flex: 1;
+      padding: 8px;
+      border: 2px solid #ddd;
+      background: white;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    
+    .status-btn.selected {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    
+    .status-btn.normal.selected {
+      background: #28a745;
+      border-color: #28a745;
+    }
+    
+    .status-btn.abnormal.selected {
+      background: #dc3545;
+      border-color: #dc3545;
+    }
+    
+    .issue-input {
+      width: 100%;
+      margin-top: 10px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      display: none;
+    }
+    
+    .popup-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .popup-buttons button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    
+    #complete-inspection {
+      background: #28a745;
+      color: white;
+    }
+    
+    #cancel-inspection {
+      background: #6c757d;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -91,34 +190,10 @@
     <input type="time" name="점검시간" id="timeInput" required>
   </label>
 
-  <label>점검항목
-    <select name="점검항목" id="inspectionSelect">
-      <option>소화기 상태(상시)</option>
-      <option>감지기 작동</option>
-      <option>냉난방기 및 배선상태(상시)</option>
-      <option>유도등 점등(상시)</option>
-      <option>비상구 개방(상시)</option>
-      <option>방화문 작동</option>
-      <option>스프링클러 누수</option>
-      <option>경종 작동 확인</option>
-      <option>피난 유도선 상태(상시)</option>
-      <option>소화전 호스 상태(상시)</option>
-      <option>직접입력</option>
-    </select>
-    <input type="text" id="customInspection" name="점검항목_직접입력"
-           placeholder="직접 입력 내용을 작성하세요" style="display:none; margin-top:6px;">
-  </label>
-
-  <label>이상유무
-    <select name="이상유무">
-      <option>이상 없음</option>
-      <option>이상 있음</option>
-    </select>
-  </label>
-
-  <label>비고
-    <textarea name="비고" rows="2"></textarea>
-  </label>
+  <!-- 숨겨진 필드들 - 점검 결과 저장용 -->
+  <input type="hidden" name="점검항목" id="inspectionResults">
+  <input type="hidden" name="이상유무" id="inspectionStatus">
+  <input type="hidden" name="비고" id="inspectionNotes">
 
   <label>확인
     <input type="text" name="확인">
@@ -135,8 +210,62 @@
   </div>
 </div>
 
+<!-- 점검 항목 팝업 -->
+<div id="inspection-popup">
+  <div class="popup-content">
+    <h3>점검 항목</h3>
+    
+    <div class="inspection-item">
+      <h4>소화전</h4>
+      <div class="status-buttons">
+        <button type="button" class="status-btn normal" data-item="소화전" data-status="이상없음">이상없음</button>
+        <button type="button" class="status-btn abnormal" data-item="소화전" data-status="이상발생">이상발생</button>
+      </div>
+      <textarea class="issue-input" data-item="소화전" placeholder="이상 내용을 입력하세요"></textarea>
+    </div>
+    
+    <div class="inspection-item">
+      <h4>주변 소화기</h4>
+      <div class="status-buttons">
+        <button type="button" class="status-btn normal" data-item="주변 소화기" data-status="이상없음">이상없음</button>
+        <button type="button" class="status-btn abnormal" data-item="주변 소화기" data-status="이상발생">이상발생</button>
+      </div>
+      <textarea class="issue-input" data-item="주변 소화기" placeholder="이상 내용을 입력하세요"></textarea>
+    </div>
+    
+    <div class="inspection-item">
+      <h4>비상대피로</h4>
+      <div class="status-buttons">
+        <button type="button" class="status-btn normal" data-item="비상대피로" data-status="이상없음">이상없음</button>
+        <button type="button" class="status-btn abnormal" data-item="비상대피로" data-status="이상발생">이상발생</button>
+      </div>
+      <textarea class="issue-input" data-item="비상대피로" placeholder="이상 내용을 입력하세요"></textarea>
+    </div>
+    
+    <div class="inspection-item">
+      <h4>유도등 점검</h4>
+      <div class="status-buttons">
+        <button type="button" class="status-btn normal" data-item="유도등 점검" data-status="이상없음">이상없음</button>
+        <button type="button" class="status-btn abnormal" data-item="유도등 점검" data-status="이상발생">이상발생</button>
+      </div>
+      <textarea class="issue-input" data-item="유도등 점검" placeholder="이상 내용을 입력하세요"></textarea>
+    </div>
+    
+    <div class="popup-buttons">
+      <button type="button" id="complete-inspection">완료</button>
+      <button type="button" id="cancel-inspection">취소</button>
+    </div>
+  </div>
+</div>
+
 <script>
   let html5QrCodeInstance = null;
+  let inspectionData = {
+    "소화전": { status: "", note: "" },
+    "주변 소화기": { status: "", note: "" },
+    "비상대피로": { status: "", note: "" },
+    "유도등 점검": { status: "", note: "" }
+  };
 
   document.getElementById("zoneInput").addEventListener("click", () => scanQRCode("zoneInput"));
 
@@ -157,17 +286,17 @@
       { facingMode: "environment" },
       { fps: 10, qrbox: { width: 280, height: 280 } },
       decodedText => {
-  document.getElementById(targetId).value = decodedText;
-  // 한국 표준시(KST)로 시간 가져오기
-  const timeString = new Date().toLocaleTimeString('ko-KR', {
-    timeZone: 'Asia/Seoul',
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-  document.getElementById("timeInput").value = timeString;
-  stopQrScanner();
-},
+        document.getElementById(targetId).value = decodedText;
+        // 한국 표준시(KST)로 시간 가져오기
+        const timeString = new Date().toLocaleTimeString('ko-KR', {
+          timeZone: 'Asia/Seoul',
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        document.getElementById("timeInput").value = timeString;
+        stopQrScanner();
+      },
       err => console.warn("QR 인식 실패:", err)
     ).catch(err => {
       alert("카메라 초기화 실패: 권한 확인 또는 다른 앱 사용 중인지 확인하세요.");
@@ -194,27 +323,129 @@
     custom.style.display = (e.target.value === "직접등록") ? "block" : "none";
   });
 
-  document.getElementById("inspectionSelect").addEventListener("change", e => {
-    const custom = document.getElementById("customInspection");
-    custom.style.display = (e.target.value === "직접입력") ? "block" : "none";
+  // 점검시간이 입력되면 점검항목 팝업 표시
+  document.getElementById("timeInput").addEventListener("change", function() {
+    if (this.value) {
+      document.getElementById("inspection-popup").style.display = "flex";
+    }
+  });
+
+  // 점검 항목 상태 버튼 클릭 처리
+  document.querySelectorAll('.status-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const item = this.dataset.item;
+      const status = this.dataset.status;
+      const itemContainer = this.closest('.inspection-item');
+      const issueInput = itemContainer.querySelector('.issue-input');
+      
+      // 같은 항목의 다른 버튼 선택 해제
+      itemContainer.querySelectorAll('.status-btn').forEach(b => b.classList.remove('selected'));
+      
+      // 현재 버튼 선택
+      this.classList.add('selected');
+      
+      // 데이터 저장
+      inspectionData[item].status = status;
+      
+      // 이상발생 선택시 입력창 표시
+      if (status === '이상발생') {
+        issueInput.style.display = 'block';
+        issueInput.focus();
+      } else {
+        issueInput.style.display = 'none';
+        inspectionData[item].note = '';
+      }
+    });
+  });
+
+  // 이상 내용 입력 처리
+  document.querySelectorAll('.issue-input').forEach(input => {
+    input.addEventListener('input', function() {
+      const item = this.dataset.item;
+      inspectionData[item].note = this.value;
+    });
+  });
+
+  // 점검 완료 버튼
+  document.getElementById("complete-inspection").addEventListener("click", function() {
+    // 모든 항목이 선택되었는지 확인
+    let allSelected = true;
+    let inspectionResults = [];
+    let statusResults = [];
+    let noteResults = [];
+    
+    for (const [item, data] of Object.entries(inspectionData)) {
+      if (!data.status) {
+        allSelected = false;
+        break;
+      }
+      inspectionResults.push(item);
+      statusResults.push(data.status);
+      if (data.note) {
+        noteResults.push(`${item}: ${data.note}`);
+      }
+    }
+    
+    if (!allSelected) {
+      alert("모든 점검 항목의 상태를 선택해주세요.");
+      return;
+    }
+    
+    // 숨겨진 필드에 결과 저장
+    document.getElementById("inspectionResults").value = inspectionResults.join(", ");
+    document.getElementById("inspectionStatus").value = statusResults.join(", ");
+    document.getElementById("inspectionNotes").value = noteResults.join(" | ");
+    
+    // 팝업 닫기
+    document.getElementById("inspection-popup").style.display = "none";
+  });
+
+  // 점검 취소 버튼
+  document.getElementById("cancel-inspection").addEventListener("click", function() {
+    // 데이터 초기화
+    inspectionData = {
+      "소화전": { status: "", note: "" },
+      "주변 소화기": { status: "", note: "" },
+      "비상대피로": { status: "", note: "" },
+      "유도등 점검": { status: "", note: "" }
+    };
+    
+    // UI 초기화
+    document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('selected'));
+    document.querySelectorAll('.issue-input').forEach(input => {
+      input.style.display = 'none';
+      input.value = '';
+    });
+    
+    // 시간 입력도 초기화
+    document.getElementById("timeInput").value = "";
+    
+    // 팝업 닫기
+    document.getElementById("inspection-popup").style.display = "none";
   });
 
   // 한국 표준시(KST) 기준으로 YYYY-MM-DD 형식의 오늘 날짜 설정
-document.querySelector("input[name='점검일자']").value =
-  new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+  document.querySelector("input[name='점검일자']").value =
+    new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
 
-  // === 수정된 submit 핸들러 시작 ===
+  // 수정된 submit 핸들러
   document.getElementById("fireForm").addEventListener("submit", function(e) {
     e.preventDefault();
     const form = this;
 
-    // 1) 제출 전 현재 점검일자·점검자 값 저장
+    // 점검 결과가 있는지 확인
+    if (!document.getElementById("inspectionResults").value) {
+      alert("점검 항목을 완료해주세요.");
+      return;
+    }
+
+    // 제출 전 현재 점검일자·점검자 값 저장
     const dateInput = form.querySelector("input[name='점검일자']");
     const inspectorSelect = form.querySelector("select[name='점검자']");
     const savedDate = dateInput.value;
     const savedInspector = inspectorSelect.value;
 
-    // 2) 서버로 전송
+    // 서버로 전송
     const params = new URLSearchParams(new FormData(form));
     fetch("https://script.google.com/macros/s/AKfycbzdhcA8LRjXSiRdA8eJCa1n1ItiqS-KBwZEE0vp7VqUuz1VQft0Nly2p9z5_AQpSzsx4g/exec", {
       method: "POST",
@@ -224,14 +455,22 @@ document.querySelector("input[name='점검일자']").value =
       if (res.ok) {
         alert("제출 완료!");
 
-        // 3) 폼 리셋
+        // 폼 리셋
         form.reset();
+        
+        // 점검 데이터 초기화
+        inspectionData = {
+          "소화전": { status: "", note: "" },
+          "주변 소화기": { status: "", note: "" },
+          "비상대피로": { status: "", note: "" },
+          "유도등 점검": { status: "", note: "" }
+        };
 
-        // 4) 점검일자·점검자 복원
+        // 점검일자·점검자 복원
         dateInput.value = savedDate;
         inspectorSelect.value = savedInspector;
 
-        // 5) '직접등록' 선택 시 커스텀 입력 노출 처리
+        // '직접등록' 선택 시 커스텀 입력 노출 처리
         const customInspector = document.getElementById("customInspector");
         customInspector.style.display = (savedInspector === "직접등록") ? "block" : "none";
       } else {
@@ -240,7 +479,6 @@ document.querySelector("input[name='점검일자']").value =
     })
     .catch(err => alert("오류 발생: " + err));
   });
-  // === 수정된 submit 핸들러 끝 ===
 
 </script>
 
