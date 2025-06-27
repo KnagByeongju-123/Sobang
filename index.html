@@ -296,6 +296,11 @@
         });
         document.getElementById("timeInput").value = timeString;
         stopQrScanner();
+        
+        // QR코드 스캔 후 점검시간 등록과 동시에 점검항목 팝업 표시
+        setTimeout(() => {
+          document.getElementById("inspection-popup").style.display = "flex";
+        }, 500);
       },
       err => console.warn("QR 인식 실패:", err)
     ).catch(err => {
@@ -377,27 +382,29 @@
     for (const [item, data] of Object.entries(inspectionData)) {
       if (!data.status) {
         allSelected = false;
-        break;
+        alert(`${item} 항목의 상태를 선택해주세요.`);
+        return;
       }
-      inspectionResults.push(item);
+      inspectionResults.push(`${item}(${data.status})`);
       statusResults.push(data.status);
-      if (data.note) {
+      if (data.note && data.status === '이상발생') {
         noteResults.push(`${item}: ${data.note}`);
       }
     }
     
     if (!allSelected) {
-      alert("모든 점검 항목의 상태를 선택해주세요.");
       return;
     }
     
     // 숨겨진 필드에 결과 저장
     document.getElementById("inspectionResults").value = inspectionResults.join(", ");
-    document.getElementById("inspectionStatus").value = statusResults.join(", ");
+    document.getElementById("inspectionStatus").value = statusResults.includes('이상발생') ? '이상발생' : '이상없음';
     document.getElementById("inspectionNotes").value = noteResults.join(" | ");
     
     // 팝업 닫기
     document.getElementById("inspection-popup").style.display = "none";
+    
+    alert("점검이 완료되었습니다!");
   });
 
   // 점검 취소 버튼
@@ -434,8 +441,9 @@
     const form = this;
 
     // 점검 결과가 있는지 확인
-    if (!document.getElementById("inspectionResults").value) {
-      alert("점검 항목을 완료해주세요.");
+    const inspectionResultsValue = document.getElementById("inspectionResults").value;
+    if (!inspectionResultsValue) {
+      alert("QR코드를 스캔하고 점검 항목을 완료해주세요.");
       return;
     }
 
@@ -445,9 +453,20 @@
     const savedDate = dateInput.value;
     const savedInspector = inspectorSelect.value;
 
+    // FormData 생성 및 수정
+    const formData = new FormData(form);
+    
+    // 점검자 처리 (직접입력인 경우)
+    if (savedInspector === "직접등록") {
+      const customInspectorValue = document.getElementById("customInspector").value;
+      if (customInspectorValue) {
+        formData.set("점검자", customInspectorValue);
+      }
+    }
+
     // 서버로 전송
-    const params = new URLSearchParams(new FormData(form));
-    fetch("https://script.google.com/macros/s/AKfycbwjoSFagwnex50vxJsmXyvCtYBxQUJFZX51Ba5Eg8An2PN7vgBDLFsLBPywIO_083VYVQ/exec", {
+    const params = new URLSearchParams(formData);
+    fetch("https://script.google.com/macros/s/AKfycbzdhcA8LRjXSiRdA8eJCa1n1ItiqS-KBwZEE0vp7VqUuz1VQft0Nly2p9z5_AQpSzsx4g/exec", {
       method: "POST",
       body: params
     })
@@ -465,6 +484,13 @@
           "비상대피로": { status: "", note: "" },
           "유도등 점검": { status: "", note: "" }
         };
+        
+        // 팝업 UI 초기화
+        document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('selected'));
+        document.querySelectorAll('.issue-input').forEach(input => {
+          input.style.display = 'none';
+          input.value = '';
+        });
 
         // 점검일자·점검자 복원
         dateInput.value = savedDate;
